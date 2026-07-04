@@ -2,23 +2,31 @@ import urllib.request
 import subprocess
 import os
 import sys
+import tempfile
 
-# ⚠️ เอาลิงก์ Raw URL ที่ก๊อปมาจากข้อ 1 มาวางตรงนี้แทนที่ลิงก์ตัวอย่างนะครับ
+# ⚠️ ลบลิงก์ข้างล่างนี้ออก แล้ววางลิงก์ Raw URL ที่คุณก๊อปมาจากขั้นตอนที่ 1 ลงไปแทนครับ
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main.py"
-TEMP_FILE = "running_app.py"
+
+temp_dir = tempfile.gettempdir()
+# เปลี่ยนชื่อไฟล์ดาวน์โหลดเพื่อไม่ให้ซ้ำซ้อนและป้องกันการเกิดลูปนรก
+TEMP_FILE = os.path.join(temp_dir, "downloaded_runner.py")
 
 try:
     print("กำลังตรวจสอบการอัปเดตจาก GitHub...")
-    # ดาวน์โหลดโค้ดเวอร์ชันล่าสุดจาก GitHub มาเก็บไว้ชั่วคราว
+    # ดาวน์โหลดไฟล์ลง Temp ของ Windows เพื่อแก้ปัญหา Permission Denied
     urllib.request.urlretrieve(GITHUB_RAW_URL, TEMP_FILE)
     
-    # สั่งรันโค้ดตัดคำที่เพิ่งดาวน์โหลดมาทันที
+    print("กำลังเรียกใช้งานโปรแกรม...")
+    # สั่งรันไฟล์ที่เพิ่งโหลดมาด้วย Python
     subprocess.run([sys.executable, TEMP_FILE])
     
 except Exception as e:
-    print(f"ไม่สามารถเชื่อมต่อ GitHub หรือเกิดข้อผิดพลาด: {e}")
+    print(f"เกิดข้อผิดพลาดในการเชื่อมต่อ: {e}")
     input("กด Enter เพื่อปิดโปรแกรม...")
 finally:
-    # เมื่อปิดโปรแกรมตัดคำ ให้ลบไฟล์ชั่วคราวทิ้งทันทีเพื่อไม่ให้รกเครื่องคนใช้งาน
+    # ลบไฟล์ชั่วคราวทิ้งทันทีเมื่อปิดโปรแกรม
     if os.path.exists(TEMP_FILE):
-        os.remove(TEMP_FILE)
+        try:
+            os.remove(TEMP_FILE)
+        except:
+            pass
