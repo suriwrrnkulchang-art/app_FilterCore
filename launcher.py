@@ -1,30 +1,31 @@
 import urllib.request
-import subprocess
 import os
-import sys
 import tempfile
 
-# ⚠️ ลบลิงก์ข้างล่างนี้ออก แล้ววางลิงก์ Raw URL ที่คุณก๊อปมาจากขั้นตอนที่ 1 ลงไปแทนครับ
+# 1. เอาลิงก์ Raw URL ของไฟล์ที่คุณต้องการให้มันโหลดมารัน มาวางตรงนี้ครับ
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main.py"
 
+# 2. บันทึกไฟล์ในโฟลเดอร์ Temp ของ Windows เพื่อไม่ให้ติดปัญหา Permission Denied
 temp_dir = tempfile.gettempdir()
-# เปลี่ยนชื่อไฟล์ดาวน์โหลดเพื่อไม่ให้ซ้ำซ้อนและป้องกันการเกิดลูปนรก
-TEMP_FILE = os.path.join(temp_dir, "downloaded_runner.py")
+TEMP_FILE = os.path.join(temp_dir, "downloaded_script.py")
 
 try:
-    print("กำลังตรวจสอบการอัปเดตจาก GitHub...")
-    # ดาวน์โหลดไฟล์ลง Temp ของ Windows เพื่อแก้ปัญหา Permission Denied
+    print("กำลังตรวจสอบและดึงไฟล์อัปเดตล่าสุดจาก GitHub...")
     urllib.request.urlretrieve(GITHUB_RAW_URL, TEMP_FILE)
     
-    print("กำลังเรียกใช้งานโปรแกรม...")
-    # สั่งรันไฟล์ที่เพิ่งโหลดมาด้วย Python
-    subprocess.run([sys.executable, TEMP_FILE])
+    print("กำลังเริ่มทำงาน...")
+    # 💡 หัวใจสำคัญที่แก้ลูปนรก: อ่านโค้ดที่โหลดมาแล้วรันในตัวโปรแกรม .exe เดิมทันที
+    # จะไม่มีการเปิด .exe ซ้อนกัน ไม่เกิดลูปนรก 100% ครับ!
+    with open(TEMP_FILE, "r", encoding="utf-8") as f:
+        downloaded_code = f.read()
+    
+    exec(downloaded_code, globals())
     
 except Exception as e:
-    print(f"เกิดข้อผิดพลาดในการเชื่อมต่อ: {e}")
+    print(f"เกิดข้อผิดพลาดในการรันระบบ: {e}")
     input("กด Enter เพื่อปิดโปรแกรม...")
 finally:
-    # ลบไฟล์ชั่วคราวทิ้งทันทีเมื่อปิดโปรแกรม
+    # เมื่อโปรแกรมทำงานเสร็จหรือปิดลง ให้ลบไฟล์ชั่วคราวทิ้งทันที
     if os.path.exists(TEMP_FILE):
         try:
             os.remove(TEMP_FILE)
