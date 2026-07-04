@@ -2,8 +2,8 @@ name: Build Python to EXE
 
 on:
   push:
-    branches: [ main ] # หรือเปลี่ยนเป็นชื่อ branch ของคุณ เช่น master
-  workflow_dispatch: # ทำให้เราสามารถกดสั่งรันเองได้ด้วยมือ
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,8 +24,19 @@ jobs:
         pip install pyinstaller
 
     - name: Build EXE file
+      shell: powershell
       run: |
-        pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="lol.ico" main.py
+        # ค้นหาไฟล์ .py ไฟล์แรกในโฟลเดอร์อัตโนมัติ
+        $pyFile = (Get-ChildItem -Filter *.py | Select-Object -First 1).Name
+        
+        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอนให้ไม่พัง)
+        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
+        
+        if ($icoFile) {
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile"
+        } else {
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile"
+        }
 
     - name: Upload EXE Artifact
       uses: actions/upload-artifact@v4
