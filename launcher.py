@@ -3,19 +3,30 @@ import os
 import tempfile
 import sys
 
-# --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' 100% ---
-# เราต้อง import โมดูล GUI และทุกตัวที่โปรแกรมจริงของคุณใช้เอาไว้ตรงนี้ครับ!
-# เพื่อให้ PyInstaller รู้และดึง DLL ของ tkinter ฝังเข้าไปในไฟล์ .exe ด้วย
+# --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' และ 'ctypes' 100% ---
+# เราต้อง import โมดูล GUI และทุกตัวที่โปรแกรมจริง (Main.py) ของคุณใช้เอาไว้ตรงนี้!
+# เพื่อให้ PyInstaller รู้และดึง DLL ต่างๆ ฝังเข้าไปในไฟล์ .exe ด้วย
+
+# 1. กลุ่ม GUI (Tkinter)
 import tkinter
 import tkinter.ttk
 import tkinter.messagebox
 import tkinter.filedialog
 
-# 💡 หมายเหตุ: ถ้าในไฟล์โปรแกรมตัดคำจริงๆ ของคุณ มีการใช้คำสั่ง import อื่นๆ อีก 
-# เช่น import requests, import PIL, import customtkinter ให้เอามาพิมพ์เพิ่มต่อตรงนี้ได้เลยนะครับ!
+# 2. กลุ่มจัดการระบบและ DLLs (แก้ปัญหา No module named 'ctypes')
+import ctypes
+import ctypes.util
+
+# 💡 หมายเหตุสำคัญ: 
+# จากภาพโค้ด Main.py ใน GitHub ของคุณก่อนหน้านี้ เห็นว่ามีการใช้ numpy, pywin32 และอื่นๆ
+# หากตัว Launcher นี้ไม่ได้มีระบบโหลดให้อัตโนมัติและต้องการให้ .exe นี้มีครบจบในตัว 
+# อย่าลืม import เพิ่มไว้ตรงนี้ด้วยนะครับ เช่น:
+# import numpy
+# import win32api
+# import win32con
 # ---------------------------------------------------------------------------------
 
-# เอาลิงก์ Raw URL ของไฟล์หลักบน GitHub มาวางตรงนี้ (อย่าลืมเปลี่ยนลิงก์นะครับ)
+# เอาลิงก์ Raw URL ของไฟล์หลักบน GitHub มาวางตรงนี้
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main.py"
 
 temp_dir = tempfile.gettempdir()
