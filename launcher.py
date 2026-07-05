@@ -84,7 +84,7 @@ except ImportError:
 APP_NAME = "SKYFILM Voice Censor"
 
 # TODO: แก้ลิงก์นี้ให้ชี้ไปที่ไฟล์ version.json (raw) บน GitHub repo ของคุณ
-GITHUB_VERSION_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/main/version.json"
+GITHUB_VERSION_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/master/refs/heads/main/main/version.json"
 
 # โฟลเดอร์เก็บไฟล์แคช (โค้ดโปรแกรมหลักที่ดาวน์โหลดล่าสุด + เวอร์ชันที่ติดตั้งอยู่ในเครื่อง)
 CACHE_DIR = os.path.join(
