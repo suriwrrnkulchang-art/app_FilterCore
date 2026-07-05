@@ -16,7 +16,7 @@ import tkinter.filedialog
 # ---------------------------------------------------------------------------------
 
 # เอาลิงก์ Raw URL ของไฟล์หลักบน GitHub มาวางตรงนี้ (อย่าลืมเปลี่ยนลิงก์นะครับ)
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/main.py"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main.py"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script.py")
