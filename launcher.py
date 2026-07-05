@@ -84,7 +84,7 @@ except ImportError:
 APP_NAME = "SKYFILM Voice Censor"
 
 # TODO: แก้ลิงก์นี้ให้ชี้ไปที่ไฟล์ version.json (raw) บน GitHub repo ของคุณ
-GITHUB_VERSION_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/master/refs/heads/main/main/version.json"
+GITHUB_VERSION_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/main/version.json"
 
 # โฟลเดอร์เก็บไฟล์แคช (โค้ดโปรแกรมหลักที่ดาวน์โหลดล่าสุด + เวอร์ชันที่ติดตั้งอยู่ในเครื่อง)
 CACHE_DIR = os.path.join(
@@ -162,10 +162,20 @@ def _download_and_cache(main_url, version):
 
 def _run_cached_main():
     """รันโค้ดโปรแกรมหลักจากไฟล์แคชในเครื่อง
-    (ใช้ตอนไม่มีอัพเดทใหม่, ผู้ใช้กด 'ภายหลัง', หรือต่อเน็ตไม่ได้)"""
+    (ใช้ตอนไม่มีอัพเดทใหม่, ผู้ใช้กด 'ภายหลัง', หรือต่อเน็ตไม่ได้)
+
+    หมายเหตุสำคัญ: ต้องใส่ __file__ และ __name__ เข้าไปใน globals ที่ส่งให้ exec()
+    ด้วยเสมอ ไม่งั้นโค้ดในไฟล์ที่มีการอ้างอิง __file__ (เช่นหา path ของโปรแกรม
+    เพื่อเก็บไฟล์ settings/bad_words หรือหา resource path ตอน build เป็น .exe)
+    จะพังด้วย NameError: name '__file__' is not defined ทันที
+    """
     with open(CACHED_MAIN_PATH, "r", encoding="utf-8") as f:
         code = f.read()
-    exec(compile(code, CACHED_MAIN_PATH, "exec"), {"__name__": "__main__"})
+    exec_globals = {
+        "__name__": "__main__",
+        "__file__": CACHED_MAIN_PATH,
+    }
+    exec(compile(code, CACHED_MAIN_PATH, "exec"), exec_globals)
 
 
 # ============================== ป็อปอัพแจ้งอัพเดท (สไตล์ OBS หน้าเดียว) ==============================
