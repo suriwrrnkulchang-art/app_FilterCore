@@ -1,55 +1,67 @@
 name: Build Python to EXE
-
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      py_file:
-        description: 'ชื่อไฟล์ Python ที่ต้องการแปลง (เช่น Launcher_App1.py)'
-        required: true
-        default: 'Launcher_App1.py'
-      exe_name:
-        description: 'ชื่อไฟล์ EXE ปลายทางที่ต้องการ (เช่น Setup_Myapp)'
-        required: true
-        default: 'Launcher_App1'
-
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-
     - name: Install PyInstaller
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
-
-    - name: Build EXE file
+    - name: Build EXE files
       shell: powershell
       run: |
-        $pyInput = "${{ github.event.inputs.py_file }}"
-        $exeOutput = "${{ github.event.inputs.exe_name }}"
-        if (-not $pyInput) { $pyInput = "Launcher_App1.py" }
-        if (-not $exeOutput) { $exeOutput = "Launcher_App1" }
-        $targetPath = $pyInput
-        if (-not (Test-Path $targetPath)) { $targetPath = (Get-ChildItem -Recurse -Filter $pyInput | Select-Object -First 1).FullName }
-        if (-not $targetPath) { $targetPath = (Get-ChildItem -Recurse -Filter *.py | Select-Object -First 1).FullName }
-        $icoFile = (Get-ChildItem -Recurse -Filter *.ico | Select-Object -First 1).FullName
-        Write-Host "Target Python Path: $targetPath"
-        Write-Host "Output EXE Name: $exeOutput"
-        if ($icoFile) { pyinstaller --onefile --name="$exeOutput" --icon="$icoFile" "$targetPath" }
-        if (-not $icoFile) { pyinstaller --onefile --name="$exeOutput" "$targetPath" }
+        # ------------------------------------------------------------------
+        # 🟢 ตั้งค่าชื่อไฟล์ .py ที่ต้องการสร้างเป็น EXE ตัวที่ 1 และตัวที่ 2 ที่นี่
+        # ------------------------------------------------------------------
+        $pyFile1 = "Launcher_App1.py"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 1 ใน GitHub ของคุณ
+        $pyFile2 = "Launcher_App2.py"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 2 ใน GitHub ของคุณ
 
-    - name: Upload EXE Artifact
+        # ตรวจสอบว่าไฟล์ .py มีอยู่จริงก่อน build (กันพังแบบไม่รู้สาเหตุ)
+        if (-not (Test-Path $pyFile1)) {
+            Write-Error "ไม่พบไฟล์ $pyFile1 กรุณาตรวจสอบชื่อไฟล์ให้ถูกต้อง"
+            exit 1
+        }
+        if (-not (Test-Path $pyFile2)) {
+            Write-Error "ไม่พบไฟล์ $pyFile2 กรุณาตรวจสอบชื่อไฟล์ให้ถูกต้อง"
+            exit 1
+        }
+
+        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอนให้ไม่พัง)
+        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
+
+        Write-Host "--- กำลังสร้าง EXE ตัวที่ 1 ---"
+        if ($icoFile) {
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile1"
+        } else {
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile1"
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "สร้าง EXE ตัวที่ 1 ล้มเหลว"
+            exit 1
+        }
+
+        Write-Host "--- กำลังสร้าง EXE ตัวที่ 2 ---"
+        if ($icoFile) {
+            pyinstaller --onefile --name="Setup_Myapp.SecondApp" --icon="$icoFile" "$pyFile2"
+        } else {
+            pyinstaller --onefile --name="Setup_Myapp.SecondApp" "$pyFile2"
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "สร้าง EXE ตัวที่ 2 ล้มเหลว"
+            exit 1
+        }
+    - name: Upload EXE Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: My-Executable-Program
+        name: My-Executable-Programs
         path: dist/*.exe
