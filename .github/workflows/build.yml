@@ -4,27 +4,11 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      py_file_1:
-        description: 'Path to .py file #1 (leave empty = auto-detect first .py found)'
-        required: false
-        default: ''
-      py_file_2:
-        description: 'Path to .py file #2 (leave empty = skip this build)'
-        required: false
-        default: ''
-      exe_name_1:
-        description: 'EXE name #1'
-        required: false
-        default: 'Setup_Myapp.FilterCore'
-      exe_name_2:
-        description: 'EXE name #2'
-        required: false
-        default: 'Setup_Myapp.Launcher'
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -39,85 +23,34 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller
 
-    - name: Build EXE file 1
+    - name: Build EXE files
       shell: powershell
-      env:
-        PY_FILE_1: ${{ github.event.inputs.py_file_1 }}
-        EXE_NAME_1: ${{ github.event.inputs.exe_name_1 }}
       run: |
-        $pyFile = $env:PY_FILE_1
-        if ([string]::IsNullOrWhiteSpace($pyFile)) {
-            $pyFile = (Get-ChildItem -Filter *.py | Select-Object -First 1).Name
-        }
-        if ([string]::IsNullOrWhiteSpace($pyFile) -or -not (Test-Path $pyFile)) {
-            Write-Error "ERROR: .py file for EXE #1 not found (input was: '$($env:PY_FILE_1)')"
-            exit 1
-        }
-
-        $exeName = $env:EXE_NAME_1
-        if ([string]::IsNullOrWhiteSpace($exeName)) { $exeName = "Setup_Myapp.FilterCore" }
-
+        # ------------------------------------------------------------------
+        # 🟢 ตั้งค่าชื่อไฟล์ .py ที่ต้องการสร้างเป็น EXE ตัวที่ 1 และตัวที่ 2 ที่นี่
+        # ------------------------------------------------------------------
+        $pyFile1 = "Launcher_App1.py"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 1 ใน GitHub ของคุณ
+        $pyFile2 = "Launcher_App2.py"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 2 ใน GitHub ของคุณ
+        
+        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอนให้ไม่พัง)
         $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
-
-        Write-Host "Building EXE 1 -> py: $pyFile | name: $exeName"
-
+        
+        print "--- กำลังสร้าง EXE ตัวที่ 1 ---"
         if ($icoFile) {
-            pyinstaller --onefile --name="$exeName" --icon="$icoFile" "$pyFile"
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile1"
         } else {
-            pyinstaller --onefile --name="$exeName" "$pyFile"
+            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile1"
         }
 
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "ERROR: PyInstaller build failed for file #1"
-            exit 1
-        }
-
-    - name: Build EXE file 2
-      shell: powershell
-      env:
-        PY_FILE_2: ${{ github.event.inputs.py_file_2 }}
-        EXE_NAME_2: ${{ github.event.inputs.exe_name_2 }}
-      run: |
-        $pyFile2 = $env:PY_FILE_2
-
-        if ([string]::IsNullOrWhiteSpace($pyFile2)) {
-            Write-Host "No .py file #2 specified -> skipping this build"
-            exit 0
-        }
-
-        if (-not (Test-Path $pyFile2)) {
-            Write-Error "ERROR: .py file for EXE #2 not found at path: '$pyFile2'"
-            exit 1
-        }
-
-        $exeName2 = $env:EXE_NAME_2
-        if ([string]::IsNullOrWhiteSpace($exeName2)) { $exeName2 = "Setup_Myapp.Launcher" }
-
-        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
-
-        Write-Host "Building EXE 2 -> py: $pyFile2 | name: $exeName2"
-
+        print "--- กำลังสร้าง EXE ตัวที่ 2 ---"
         if ($icoFile) {
-            pyinstaller --onefile --name="$exeName2" --icon="$icoFile" "$pyFile2"
+            pyinstaller --onefile --name="Setup_Myapp.SecondApp" --icon="$icoFile" "$pyFile2"
         } else {
-            pyinstaller --onefile --name="$exeName2" "$pyFile2"
+            pyinstaller --onefile --name="Setup_Myapp.SecondApp" "$pyFile2"
         }
 
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "ERROR: PyInstaller build failed for file #2"
-            exit 1
-        }
-
-    - name: Upload EXE Artifact 1
+    - name: Upload EXE Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: My-Executable-Program-1
-        path: dist/${{ github.event.inputs.exe_name_1 || 'Setup_Myapp.FilterCore' }}.exe
-        if-no-files-found: warn
-
-    - name: Upload EXE Artifact 2
-      uses: actions/upload-artifact@v4
-      with:
-        name: My-Executable-Program-2
-        path: dist/${{ github.event.inputs.exe_name_2 || 'Setup_Myapp.Launcher' }}.exe
-        if-no-files-found: warn
+        name: My-Executable-Programs
+        path: dist/*.exe
