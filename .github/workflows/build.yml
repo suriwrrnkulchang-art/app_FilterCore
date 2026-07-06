@@ -5,14 +5,14 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
     inputs:
-      file1:
-        description: 'First Python file name'
+      py_file:
+        description: 'ชื่อไฟล์ Python ที่ต้องการแปลง (เช่น Launcher_App1.py)'
         required: true
-        default: 'Setup_Program-My-THAI.py'
-      file2:
-        description: 'Second Python file name'
+        default: 'Launcher_App1.py'
+      exe_name:
+        description: 'ชื่อไฟล์ EXE ปลายทางที่ต้องการ (เช่น Setup_Myapp)'
         required: true
-        default: 'uninstall_Program.py'
+        default: 'Launcher_App1'
 
 jobs:
   build:
@@ -32,59 +32,24 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller
 
-    - name: Build EXE files
+    - name: Build EXE file
       shell: powershell
       run: |
-        $pyFile1 = "${{ github.event.inputs.file1 }}"
-        $pyFile2 = "${{ github.event.inputs.file2 }}"
+        $pyInput = "${{ github.event.inputs.py_file }}"
+        $exeOutput = "${{ github.event.inputs.exe_name }}"
+        if (-not $pyInput) { $pyInput = "Launcher_App1.py" }
+        if (-not $exeOutput) { $exeOutput = "Launcher_App1" }
+        $targetPath = $pyInput
+        if (-not (Test-Path $targetPath)) { $targetPath = (Get-ChildItem -Recurse -Filter $pyInput | Select-Object -First 1).FullName }
+        if (-not $targetPath) { $targetPath = (Get-ChildItem -Recurse -Filter *.py | Select-Object -First 1).FullName }
+        $icoFile = (Get-ChildItem -Recurse -Filter *.ico | Select-Object -First 1).FullName
+        Write-Host "Target Python Path: $targetPath"
+        Write-Host "Output EXE Name: $exeOutput"
+        if ($icoFile) { pyinstaller --onefile --name="$exeOutput" --icon="$icoFile" "$targetPath" }
+        if (-not $icoFile) { pyinstaller --onefile --name="$exeOutput" "$targetPath" }
 
-        if (-not $pyFile1) { $pyFile1 = "Setup_Program-My-THAI.py" }
-        if (-not $pyFile2) { $pyFile2 = "uninstall_Program.py" }
-
-        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
-
-        # --- Process File 1 ---
-        $path1 = $pyFile1
-        if (-not (Test-Path $path1)) {
-            $search1 = Get-ChildItem -Recurse -Filter $pyFile1 | Select-Object -First 1
-            if ($search1) { $path1 = $search1.FullName }
-        }
-
-        if (Test-Path $path1) {
-            Write-Host "Building EXE 1 from $path1"
-            if ($icoFile) {
-                pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$path1"
-            } else {
-                pyinstaller --onefile --name="Setup_Program-My-THAI" "$path1"
-            }
-        } else {
-            Write-Host "ERROR: $pyFile1 not found anywhere in repository."
-            Get-ChildItem -Recurse -Filter *.py
-            exit 1
-        }
-
-        # --- Process File 2 ---
-        $path2 = $pyFile2
-        if (-not (Test-Path $path2)) {
-            $search2 = Get-ChildItem -Recurse -Filter $pyFile2 | Select-Object -First 1
-            if ($search2) { $path2 = $search2.FullName }
-        }
-
-        if (Test-Path $path2) {
-            Write-Host "Building EXE 2 from $path2"
-            if ($icoFile) {
-                pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$path2"
-            } else {
-                pyinstaller --onefile --name="uninstall_Program" "$path2"
-            }
-        } else {
-            Write-Host "ERROR: $pyFile2 not found anywhere in repository."
-            Get-ChildItem -Recurse -Filter *.py
-            exit 1
-        }
-
-    - name: Upload EXE Artifacts
+    - name: Upload EXE Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: My-Executable-Programs
+        name: My-Executable-Program
         path: dist/*.exe
