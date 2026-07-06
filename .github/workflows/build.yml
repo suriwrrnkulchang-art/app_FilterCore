@@ -27,26 +27,38 @@ jobs:
       shell: powershell
       run: |
         # ------------------------------------------------------------------
-        # 🟢 ตั้งค่าชื่อไฟล์ .py ที่ต้องการสร้างเป็น EXE ตัวที่ 1 และตัวที่ 2 ที่นี่
+        # 🟢 ต้องใส่นามสกุล .py ต่อท้ายชื่อไฟล์เสมอ และตรวจสอบชื่อให้ตรงกับใน GitHub
         # ------------------------------------------------------------------
-        $pyFile1 = "Setup_Program-My-THAI"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 1 ใน GitHub ของคุณ
-        $pyFile2 = "uninstall_Program"  # <-- เปลี่ยนเป็นชื่อไฟล์ Py ที่ 2 ใน GitHub ของคุณ
+        $pyFile1 = "Setup_Program-My-THAI.py"
+        $pyFile2 = "uninstall_Program.py"
         
-        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอนให้ไม่พัง)
+        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอน)
         $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
         
-        print "--- กำลังสร้าง EXE ตัวที่ 1 ---"
-        if ($icoFile) {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile1"
+        # --- สร้าง EXE ตัวที่ 1 ---
+        if (Test-Path $pyFile1) {
+            print "--- กำลังสร้าง EXE ตัวที่ 1 ($pyFile1) ---"
+            if ($icoFile) {
+                pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$pyFile1"
+            } else {
+                pyinstaller --onefile --name="Setup_Program-My-THAI" "$pyFile1"
+            }
         } else {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile1"
+            Write-Error "หาไฟล์ $pyFile1 ไม่เจอ! กรุณาตรวจสอบว่าอัปโหลดไฟล์นี้ขึ้น GitHub แล้วหรือยัง"
+            exit 1
         }
 
-        print "--- กำลังสร้าง EXE ตัวที่ 2 ---"
-        if ($icoFile) {
-            pyinstaller --onefile --name="Setup_Myapp.SecondApp" --icon="$icoFile" "$pyFile2"
+        # --- สร้าง EXE ตัวที่ 2 ---
+        if (Test-Path $pyFile2) {
+            print "--- กำลังสร้าง EXE ตัวที่ 2 ($pyFile2) ---"
+            if ($icoFile) {
+                pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$pyFile2"
+            } else {
+                pyinstaller --onefile --name="uninstall_Program" "$pyFile2"
+            }
         } else {
-            pyinstaller --onefile --name="Setup_Myapp.SecondApp" "$pyFile2"
+            Write-Error "หาไฟล์ $pyFile2 ไม่เจอ! กรุณาตรวจสอบว่าอัปโหลดไฟล์นี้ขึ้น GitHub แล้วหรือยัง"
+            exit 1
         }
 
     - name: Upload EXE Artifacts
