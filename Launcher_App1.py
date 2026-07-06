@@ -19,7 +19,7 @@ GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs
 
 # 🔒 SHA-256 hash ของไฟล์ install.py เวอร์ชันที่เชื่อถือได้
 # หาได้จาก: certutil -hashfile install.py SHA256  (Windows)
-EXPECTED_SHA256 = "ใส่ hash ของ install.py ที่นี่"
+EXPECTED_SHA256 = "e0df9e8cf57c8b661356b9dab4dc3794eed062247de4f06e392fade15e62f334"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_1.py")
