@@ -27,37 +27,37 @@ jobs:
       shell: powershell
       run: |
         # ------------------------------------------------------------------
-        # 🟢 ต้องใส่นามสกุล .py ต่อท้ายชื่อไฟล์เสมอ และตรวจสอบชื่อให้ตรงกับใน GitHub
+        # 🟢 กำหนดชื่อไฟล์ .py ให้ตรงกับที่อยู่บน GitHub ของคุณ
         # ------------------------------------------------------------------
         $pyFile1 = "Setup_Program-My-THAI.py"
         $pyFile2 = "uninstall_Program.py"
         
-        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอน)
+        # ค้นหาไฟล์ .ico อัตโนมัติในโฟลเดอร์ (ถ้าไม่มีจะข้ามให้เอง)
         $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
         
-        # --- สร้าง EXE ตัวที่ 1 ---
+        # --- ตรวจสอบและสร้าง EXE ตัวที่ 1 ---
         if (Test-Path $pyFile1) {
-            print "--- กำลังสร้าง EXE ตัวที่ 1 ($pyFile1) ---"
+            Write-Host "--- [1/2] Building EXE for $pyFile1 ---" -ForegroundColor Cyan
             if ($icoFile) {
                 pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$pyFile1"
             } else {
                 pyinstaller --onefile --name="Setup_Program-My-THAI" "$pyFile1"
             }
         } else {
-            Write-Error "หาไฟล์ $pyFile1 ไม่เจอ! กรุณาตรวจสอบว่าอัปโหลดไฟล์นี้ขึ้น GitHub แล้วหรือยัง"
+            Write-Host "ERROR: File '$pyFile1' not found! Please check your file name on GitHub." -ForegroundColor Red
             exit 1
         }
 
-        # --- สร้าง EXE ตัวที่ 2 ---
+        # --- ตรวจสอบและสร้าง EXE ตัวที่ 2 ---
         if (Test-Path $pyFile2) {
-            print "--- กำลังสร้าง EXE ตัวที่ 2 ($pyFile2) ---"
+            Write-Host "--- [2/2] Building EXE for $pyFile2 ---" -ForegroundColor Cyan
             if ($icoFile) {
                 pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$pyFile2"
             } else {
                 pyinstaller --onefile --name="uninstall_Program" "$pyFile2"
             }
         } else {
-            Write-Error "หาไฟล์ $pyFile2 ไม่เจอ! กรุณาตรวจสอบว่าอัปโหลดไฟล์นี้ขึ้น GitHub แล้วหรือยัง"
+            Write-Host "ERROR: File '$pyFile2' not found! Please check your file name on GitHub." -ForegroundColor Red
             exit 1
         }
 
