@@ -16,7 +16,7 @@ import ctypes.util
 # ---------------------------------------------------------------------------------
 
 # 🟢 เปลี่ยนลิงก์ Raw URL ตรงนี้ให้เป็นไฟล์ Main ตัวที่ 2 ของคุณบน GitHub
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main2.py"
+GITHUB_RAW_URL = "https://github.com/suriwrrnkulchang-art/55/blob/main/uninstall.py"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_2.py")
