@@ -1,7 +1,5 @@
 import sys
-import io
 
-# 🔧 แก้ปัญหา UnicodeEncodeError ตอน print ข้อความภาษาไทยบน Windows console
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr is not None:
@@ -10,11 +8,9 @@ if sys.stderr is not None:
 import urllib.request
 import os
 import tempfile
-import sys
 import hashlib
 import json
 
-# --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' และ 'ctypes' 100% ---
 import tkinter
 import tkinter.ttk
 import tkinter.messagebox
@@ -25,10 +21,13 @@ import ctypes.util
 # import win32api
 # import win32con
 
-# 🟢 ใส่ลิงก์ Raw URL ของไฟล์หลักที่ 2 บน GitHub (เปลี่ยนเป็นไฟล์จริงของ App2)
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
+# 🔒 ป้องกันการรันซ้ำ — ถ้ามีตัวเดิมรันอยู่แล้ว ให้ปิดตัวเองเงียบๆ ทันที ไม่แจ้งเตือน
+MUTEX_NAME = "Global\\FilterCore_App2_SingleInstanceMutex"
+mutex = ctypes.windll.kernel32.CreateMutexW(None, False, MUTEX_NAME)
+if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+    sys.exit(0)
 
-# 🔒 SHA-256 hash ของไฟล์เวอร์ชันที่เชื่อถือได้ (ของ App2)
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
 EXPECTED_SHA256 = "aa7f1b9622dbe0c2b164259af5432fab34122c81f13d3cf56c00c5ff7fcc227c"
 
 temp_dir = tempfile.gettempdir()
