@@ -3,6 +3,7 @@ import os
 import tempfile
 import sys
 import hashlib
+import json
 
 # --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' และ 'ctypes' 100% ---
 import tkinter
