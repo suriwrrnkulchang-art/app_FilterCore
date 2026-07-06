@@ -1,86 +1,123 @@
-name: Build and Release
+name: Build Python to EXE
 
-# ทำงานเมื่อ push "tag" เวอร์ชันเท่านั้น (เช่น v1.0.0)
-# ไม่ทำงานทุกครั้งที่ push ขึ้น main/master แบบเดิม
-# -> กันไม่ให้มีการ build/ปล่อยเวอร์ชันใหม่แบบไม่ตั้งใจทุกคอมมิต
 on:
   push:
-    tags:
-      - "v*.*.*"
-  workflow_dispatch:  # ยังกดรันมือได้จากหน้า Actions ถ้าต้องการ
-
-permissions:
-  contents: write  # ต้องมีสิทธิ์นี้เพื่อสร้าง GitHub Release
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      py_file_1:
+        description: 'พาธไฟล์ .py ตัวที่ 1 (เว้นว่าง = หาไฟล์แรกที่เจอ)'
+        required: false
+        default: ''
+      py_file_2:
+        description: 'พาธไฟล์ .py ตัวที่ 2 (เว้นว่าง = ข้าม ไม่ build ตัวนี้)'
+        required: false
+        default: ''
+      exe_name_1:
+        description: 'ชื่อ EXE ตัวที่ 1'
+        required: false
+        default: 'Setup_Myapp.FilterCore'
+      exe_name_2:
+        description: 'ชื่อ EXE ตัวที่ 2'
+        required: false
+        default: 'Setup_Myapp.Launcher'
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Install PyInstaller
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
+    - name: Install PyInstaller
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
 
-      # ---- Build เฉพาะไฟล์ที่ "ระบุชื่อจริง" เท่านั้น ----
-      # ไม่ใช่ "ไฟล์ .py ไฟล์แรกที่เจอในโฟลเดอร์" แบบเดิม เพื่อไม่ให้มีไฟล์แปลกปลอม
-      # หลุดเข้าไปถูก build เป็น .exe โดยไม่ตั้งใจ
-      - name: Build installer EXE
-        shell: powershell
-        run: |
-          $icon = ""
-          if (Test-Path "logo.ico") { $icon = "--icon=logo.ico" }
-          pyinstaller --onefile --noconsole --name "Setup_FilterCore" $icon install.py
+    - name: Build EXE file 1
+      shell: powershell
+      env:
+        PY_FILE_1: ${{ github.event.inputs.py_file_1 }}
+        EXE_NAME_1: ${{ github.event.inputs.exe_name_1 }}
+      run: |
+        $pyFile = $env:PY_FILE_1
+        if ([string]::IsNullOrWhiteSpace($pyFile)) {
+            $pyFile = (Get-ChildItem -Filter *.py | Select-Object -First 1).Name
+        }
+        if ([string]::IsNullOrWhiteSpace($pyFile) -or -not (Test-Path $pyFile)) {
+            Write-Error "ไม่พบไฟล์ .py สำหรับ EXE ตัวที่ 1 (ระบุ: '$($env:PY_FILE_1)')"
+            exit 1
+        }
 
-      - name: Build uninstaller EXE
-        shell: powershell
-        run: |
-          $icon = ""
-          if (Test-Path "logo.ico") { $icon = "--icon=logo.ico" }
-          pyinstaller --onefile --noconsole --name "Uninstall_FilterCore" $icon uninstall.py
+        $exeName = $env:EXE_NAME_1
+        if ([string]::IsNullOrWhiteSpace($exeName)) { $exeName = "Setup_Myapp.FilterCore" }
 
-      # ---- แพ็กซอร์สของแอปหลัก (main.py และไฟล์ที่เกี่ยวข้อง) เป็น zip เดียว ----
-      # นี่คือไฟล์ที่ updater.py ในเครื่องผู้ใช้จะโหลดไปแตกทับตอนมีเวอร์ชันใหม่
-      # แก้ path ในคำสั่ง Compress-Archive ด้านล่างให้ตรงกับไฟล์จริงของแอปคุณ
-      - name: Package app source zip
-        shell: powershell
-        run: |
-          New-Item -ItemType Directory -Path release_src -Force
-          # ตัวอย่าง: คัดลอกเฉพาะไฟล์ที่แอปหลักต้องใช้จริง (ปรับตามโปรเจกต์คุณ)
-          Copy-Item main.py release_src/ -ErrorAction SilentlyContinue
-          Copy-Item updater.py release_src/ -ErrorAction SilentlyContinue
-          Copy-Item logo.ico release_src/ -ErrorAction SilentlyContinue
-          Compress-Archive -Path release_src/* -DestinationPath FilterCore-source.zip -Force
+        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
 
-      # ---- คำนวณ SHA-256 ของทุกไฟล์ที่จะปล่อย แล้วรวมไว้ใน checksums.txt ----
-      # updater.py ในเครื่องผู้ใช้จะโหลดไฟล์นี้มาเทียบก่อนอัปเดตทุกครั้ง
-      - name: Generate checksums
-        shell: powershell
-        run: |
-          $files = @("dist/Setup_FilterCore.exe", "dist/Uninstall_FilterCore.exe", "FilterCore-source.zip")
-          $lines = @()
-          foreach ($f in $files) {
-            if (Test-Path $f) {
-              $hash = (Get-FileHash -Algorithm SHA256 -Path $f).Hash.ToLower()
-              $name = Split-Path $f -Leaf
-              $lines += "$hash  $name"
-            }
-          }
-          $lines | Out-File -FilePath checksums.txt -Encoding utf8
+        Write-Host "Building EXE 1 -> py: $pyFile | name: $exeName"
 
-      # ---- สร้าง GitHub Release ตาม tag แล้วแนบไฟล์ทั้งหมด ----
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/Setup_FilterCore.exe
-            dist/Uninstall_FilterCore.exe
-            FilterCore-source.zip
-            checksums.txt
+        if ($icoFile) {
+            pyinstaller --onefile --name="$exeName" --icon="$icoFile" "$pyFile"
+        } else {
+            pyinstaller --onefile --name="$exeName" "$pyFile"
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "PyInstaller build ล้มเหลวสำหรับไฟล์ที่ 1"
+            exit 1
+        }
+
+    - name: Build EXE file 2
+      shell: powershell
+      env:
+        PY_FILE_2: ${{ github.event.inputs.py_file_2 }}
+        EXE_NAME_2: ${{ github.event.inputs.exe_name_2 }}
+      run: |
+        $pyFile2 = $env:PY_FILE_2
+
+        if ([string]::IsNullOrWhiteSpace($pyFile2)) {
+            Write-Host "ไม่ได้ระบุไฟล์ .py ตัวที่ 2 -> ข้ามการ build ตัวนี้"
+            exit 0
+        }
+
+        if (-not (Test-Path $pyFile2)) {
+            Write-Error "ไม่พบไฟล์ .py สำหรับ EXE ตัวที่ 2 ที่พาธ: '$pyFile2'"
+            exit 1
+        }
+
+        $exeName2 = $env:EXE_NAME_2
+        if ([string]::IsNullOrWhiteSpace($exeName2)) { $exeName2 = "Setup_Myapp.Launcher" }
+
+        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
+
+        Write-Host "Building EXE 2 -> py: $pyFile2 | name: $exeName2"
+
+        if ($icoFile) {
+            pyinstaller --onefile --name="$exeName2" --icon="$icoFile" "$pyFile2"
+        } else {
+            pyinstaller --onefile --name="$exeName2" "$pyFile2"
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "PyInstaller build ล้มเหลวสำหรับไฟล์ที่ 2"
+            exit 1
+        }
+
+    - name: Upload EXE Artifact 1
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Executable-Program-1
+        path: dist/${{ github.event.inputs.exe_name_1 || 'Setup_Myapp.FilterCore' }}.exe
+        if-no-files-found: warn
+
+    - name: Upload EXE Artifact 2
+      uses: actions/upload-artifact@v4
+      with:
+        name: My-Executable-Program-2
+        path: dist/${{ github.event.inputs.exe_name_2 || 'Setup_Myapp.Launcher' }}.exe
+        if-no-files-found: warn
