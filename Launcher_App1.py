@@ -30,7 +30,7 @@ if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
     sys.exit(0)
 
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install.py"
-EXPECTED_SHA256 = "e0df9e8cf57c8b661356b9dab4dc3794eed062247de4f06e392fade15e62f33"
+EXPECTED_SHA256 = "e0df9e8cf57c8b661356b9dab4dc3794eed062247de4f06e392fade15e62f334"
 
 # ปลอมตัวเป็นเบราว์เซอร์ตอนดาวน์โหลด กันบางกรณีที่ proxy/CDN ตอบผิดปกติ
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36"
