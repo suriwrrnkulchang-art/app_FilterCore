@@ -4,14 +4,13 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
-    # 🟢 เปิดฟีเจอร์ให้คุณสามารถกดเลือกและพิมพ์ชื่อไฟล์ที่ต้องการดึงมาทำ EXE บนหน้าเว็บ GitHub ได้ทันที
     inputs:
       file1:
-        description: 'ชื่อไฟล์ Python ตัวที่ 1 (เช่น Setup_Program-My-THAI.py)'
+        description: 'First Python file name'
         required: true
         default: 'Setup_Program-My-THAI.py'
       file2:
-        description: 'ชื่อไฟล์ Python ตัวที่ 2 (เช่น uninstall_Program.py)'
+        description: 'Second Python file name'
         required: true
         default: 'uninstall_Program.py'
 
@@ -36,50 +35,53 @@ jobs:
     - name: Build EXE files
       shell: powershell
       run: |
-        # ดึงค่าชื่อไฟล์มาจากช่องกรอกบนหน้าเว็บ GitHub (หากรันแบบออโต้ตอน Push จะใช้ค่า Default ด้านบน)
         $pyFile1 = "${{ github.event.inputs.file1 }}"
         $pyFile2 = "${{ github.event.inputs.file2 }}"
-        
+
         if (-not $pyFile1) { $pyFile1 = "Setup_Program-My-THAI.py" }
         if (-not $pyFile2) { $pyFile2 = "uninstall_Program.py" }
 
-        # ค้นหาไฟล์ไอคอน .ico แรกในโปรเจกต์ (ถ้าไม่มีจะข้ามให้ไม่พัง)
         $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
 
-        # ------------------------------------------------------------------
-        # 🤖 ฟังก์ชันอัจฉริยะ ค้นหาไฟล์ทั่วทั้งโปรเจกต์อัตโนมัติและสั่ง Build
-        # ------------------------------------------------------------------
-        function Build-ExeApp ($targetFile, $exeName, $icon) {
-            $actualPath = $targetFile
-            
-            # หากหาไม่เจอที่หน้าแรก (Root) จะสั่งให้ระบบค้นหาลึกเข้าไปในโฟลเดอร์ย่อยให้อัตโนมัติ
-            if (-not (Test-Path $actualPath)) {
-                $search = Get-ChildItem -Recurse -Filter $targetFile | Select-Object -First 1
-                if ($search) { 
-                    $actualPath = $search.FullName 
-                }
-            }
-
-            # สั่ง Build เมื่อเจอไฟล์
-            if (Test-Path $actualPath) {
-                Write-Host "--- [FOUND] Building EXE for $exeName using ($actualPath) ---" -ForegroundColor Cyan
-                if ($icon) {
-                    pyinstaller --onefile --name="$exeName" --icon="$icon" "$actualPath"
-                } else {
-                    pyinstaller --onefile --name="$exeName" "$actualPath"
-                }
-            } else {
-                # กรณีหาไม่เจอจริง ๆ ระบบจะลิสต์ไฟล์ .py ทั้งหมดใน GitHub มาให้คุณดูเพื่อตรวจคำผิด
-                Write-Host "❌ ERROR: ไม่พบไฟล์ชื่อ '$targetFile' ใน Repository นี้!" -ForegroundColor Red
-                Write-Host "นี่คือรายชื่อไฟล์ .py ทั้งหมดที่คุณอัปโหลดไว้บน GitHub ลองดูว่าพิมพ์ชื่อไหนผิดไปนะ:" -ForegroundColor Yellow
-                Get-ChildItem -Recurse -Filter *.py | ForEach-Object { Write-Host " -> $($_.Name) (อยู่ในโฟลเดอร์: $($_.DirectoryName))" }
-                exit 1
-            }
+        # --- Process File 1 ---
+        $path1 = $pyFile1
+        if (-not (Test-Path $path1)) {
+            $search1 = Get-ChildItem -Recurse -Filter $pyFile1 | Select-Object -First 1
+            if ($search1) { $path1 = $search1.FullName }
         }
 
-        # สั่งทำงานแอปที่ 1 และ แอปที่ 2
-        Build-ExeApp -targetFile $pyFile1 -exeName "Setup_Program-My-THAI" -icon $icoFile
-        Build-ExeApp -targetFile $pyFile2 -exeName "uninstall_Program" -icon $icoFile
+        if (Test-Path $path1) {
+            Write-Host "Building EXE 1 from $path1"
+            if ($icoFile) {
+                pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$path1"
+            } else {
+                pyinstaller --onefile --name="Setup_Program-My-THAI" "$path1"
+            }
+        } else {
+            Write-Host "ERROR: $pyFile1 not found anywhere in repository."
+            Get-ChildItem -Recurse -Filter *.py
+            exit 1
+        }
+
+        # --- Process File 2 ---
+        $path2 = $pyFile2
+        if (-not (Test-Path $path2)) {
+            $search2 = Get-ChildItem -Recurse -Filter $pyFile2 | Select-Object -First 1
+            if ($search2) { $path2 = $search2.FullName }
+        }
+
+        if (Test-Path $path2) {
+            Write-Host "Building EXE 2 from $path2"
+            if ($icoFile) {
+                pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$path2"
+            } else {
+                pyinstaller --onefile --name="uninstall_Program" "$path2"
+            }
+        } else {
+            Write-Host "ERROR: $pyFile2 not found anywhere in repository."
+            Get-ChildItem -Recurse -Filter *.py
+            exit 1
+        }
 
     - name: Upload EXE Artifacts
       uses: actions/upload-artifact@v4
