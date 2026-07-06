@@ -1,16 +1,13 @@
-import sys   
-
+import sys
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr is not None:
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-
 import urllib.request
 import os
 import tempfile
 import hashlib
 import json
-
 import tkinter
 import tkinter.ttk
 import tkinter.messagebox
@@ -29,6 +26,10 @@ if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
 
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
 EXPECTED_SHA256 = "5cb2a9d17c6f1e6894c9c549e59df4eb99c93b9bb4c8cfb5f38cea141a06d338"
+
+# 🛡️ เครื่องหมายที่ต้องมีในไฟล์ตัวถอนการติดตั้งจริง (ป้องกันดาวน์โหลด/รันไฟล์ผิด)
+REQUIRED_MARKERS = ["load_install_info", "remove_install_dir", "uninstall_pip_packages"]
+FORBIDDEN_MARKERS = ["class InstallerApp", "GITHUB_ZIP_URL"]
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_2.py")
@@ -58,10 +59,24 @@ try:
         input("กด Enter เพื่อปิดโปรแกรม...")
         sys.exit(1)
 
-    print("กำลังเริ่มทำงาน...")
     with open(TEMP_FILE, "r", encoding="utf-8") as f:
         downloaded_code = f.read()
 
+    # 🛡️ ตรวจสอบเนื้อหาว่าเป็นไฟล์ถอนการติดตั้งจริง ไม่ใช่ไฟล์ติดตั้งที่อัปโหลดผิด
+    missing = [m for m in REQUIRED_MARKERS if m not in downloaded_code]
+    wrong_file = [m for m in FORBIDDEN_MARKERS if m in downloaded_code]
+
+    if missing or wrong_file:
+        print("❌ ไฟล์ที่ดาวน์โหลดมาไม่ใช่ไฟล์ 'ตัวถอนการติดตั้ง' ที่ถูกต้อง!")
+        if wrong_file:
+            print("   ดูเหมือนว่าไฟล์นี้เป็นโค้ด 'ตัวติดตั้ง' (install.py) ไม่ใช่ตัวถอนการติดตั้ง")
+        if missing:
+            print(f"   ไม่พบส่วนที่ควรมี: {', '.join(missing)}")
+        print("   กรุณาตรวจสอบไฟล์ uninstall.py บน GitHub ว่าอัปโหลดถูกไฟล์หรือไม่")
+        input("กด Enter เพื่อปิดโปรแกรม...")
+        sys.exit(1)
+
+    print("กำลังเริ่มทำงาน...")
     exec(downloaded_code, globals())
 
 except Exception as e:
