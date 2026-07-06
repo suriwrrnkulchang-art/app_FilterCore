@@ -1,7 +1,5 @@
 import sys
-import io
 
-# 🔧 แก้ปัญหา UnicodeEncodeError ตอน print ข้อความภาษาไทยบน Windows console
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr is not None:
@@ -10,11 +8,9 @@ if sys.stderr is not None:
 import urllib.request
 import os
 import tempfile
-import sys
 import hashlib
 import json
 
-# --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' และ 'ctypes' 100% ---
 import tkinter
 import tkinter.ttk
 import tkinter.messagebox
@@ -25,10 +21,13 @@ import ctypes.util
 # import win32api
 # import win32con
 
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install.py"
+# 🔒 ป้องกันการรันซ้ำ — ถ้ามีตัวเดิมรันอยู่แล้ว ให้ปิดตัวเองเงียบๆ ทันที ไม่แจ้งเตือน
+MUTEX_NAME = "Global\\FilterCore_App1_SingleInstanceMutex"
+mutex = ctypes.windll.kernel32.CreateMutexW(None, False, MUTEX_NAME)
+if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+    sys.exit(0)
 
-# 🔒 SHA-256 hash ของไฟล์ install.py เวอร์ชันที่เชื่อถือได้
-# หาได้จาก: certutil -hashfile install.py SHA256  (Windows)
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install.py"
 EXPECTED_SHA256 = "e0df9e8cf57c8b661356b9dab4dc3794eed062247de4f06e392fade15e62f334"
 
 temp_dir = tempfile.gettempdir()
@@ -49,9 +48,7 @@ try:
 
     actual_hash = sha256_of_file(TEMP_FILE)
 
-    if EXPECTED_SHA256 == "ใส่ hash ของ install.py ที่นี่":
-        print("⚠️ ยังไม่ได้ตั้งค่า EXPECTED_SHA256 — ข้ามการตรวจสอบ (ไม่แนะนำสำหรับใช้งานจริง)")
-    elif actual_hash != EXPECTED_SHA256:
+    if actual_hash != EXPECTED_SHA256:
         print("❌ ไฟล์ที่ดาวน์โหลดมาไม่ตรงกับ hash ที่กำหนดไว้!")
         print(f"   คาดหวัง: {EXPECTED_SHA256}")
         print(f"   ได้จริง: {actual_hash}")
