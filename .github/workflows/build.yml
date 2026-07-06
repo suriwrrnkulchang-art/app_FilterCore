@@ -1,45 +1,86 @@
-name: Build Python to EXE
+name: Build and Release
 
+# ทำงานเมื่อ push "tag" เวอร์ชันเท่านั้น (เช่น v1.0.0)
+# ไม่ทำงานทุกครั้งที่ push ขึ้น main/master แบบเดิม
+# -> กันไม่ให้มีการ build/ปล่อยเวอร์ชันใหม่แบบไม่ตั้งใจทุกคอมมิต
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:  # ยังกดรันมือได้จากหน้า Actions ถ้าต้องการ
+
+permissions:
+  contents: write  # ต้องมีสิทธิ์นี้เพื่อสร้าง GitHub Release
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Install PyInstaller
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
+      - name: Install PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
 
-    - name: Build EXE file
-      shell: powershell
-      run: |
-        # ค้นหาไฟล์ .py ไฟล์แรกในโฟลเดอร์อัตโนมัติ
-        $pyFile = (Get-ChildItem -Filter *.py | Select-Object -First 1).Name
-        
-        # ค้นหาไฟล์ .ico ไฟล์แรกในโฟลเดอร์อัตโนมัติ (ถ้าไม่มีจะข้ามการใส่ไอคอนให้ไม่พัง)
-        $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
-        
-        if ($icoFile) {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile"
-        } else {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile"
-        }
+      # ---- Build เฉพาะไฟล์ที่ "ระบุชื่อจริง" เท่านั้น ----
+      # ไม่ใช่ "ไฟล์ .py ไฟล์แรกที่เจอในโฟลเดอร์" แบบเดิม เพื่อไม่ให้มีไฟล์แปลกปลอม
+      # หลุดเข้าไปถูก build เป็น .exe โดยไม่ตั้งใจ
+      - name: Build installer EXE
+        shell: powershell
+        run: |
+          $icon = ""
+          if (Test-Path "logo.ico") { $icon = "--icon=logo.ico" }
+          pyinstaller --onefile --noconsole --name "Setup_FilterCore" $icon install.py
 
-    - name: Upload EXE Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: My-Executable-Program
-        path: dist/Setup_Myapp.FilterCore.exe
+      - name: Build uninstaller EXE
+        shell: powershell
+        run: |
+          $icon = ""
+          if (Test-Path "logo.ico") { $icon = "--icon=logo.ico" }
+          pyinstaller --onefile --noconsole --name "Uninstall_FilterCore" $icon uninstall.py
+
+      # ---- แพ็กซอร์สของแอปหลัก (main.py และไฟล์ที่เกี่ยวข้อง) เป็น zip เดียว ----
+      # นี่คือไฟล์ที่ updater.py ในเครื่องผู้ใช้จะโหลดไปแตกทับตอนมีเวอร์ชันใหม่
+      # แก้ path ในคำสั่ง Compress-Archive ด้านล่างให้ตรงกับไฟล์จริงของแอปคุณ
+      - name: Package app source zip
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path release_src -Force
+          # ตัวอย่าง: คัดลอกเฉพาะไฟล์ที่แอปหลักต้องใช้จริง (ปรับตามโปรเจกต์คุณ)
+          Copy-Item main.py release_src/ -ErrorAction SilentlyContinue
+          Copy-Item updater.py release_src/ -ErrorAction SilentlyContinue
+          Copy-Item logo.ico release_src/ -ErrorAction SilentlyContinue
+          Compress-Archive -Path release_src/* -DestinationPath FilterCore-source.zip -Force
+
+      # ---- คำนวณ SHA-256 ของทุกไฟล์ที่จะปล่อย แล้วรวมไว้ใน checksums.txt ----
+      # updater.py ในเครื่องผู้ใช้จะโหลดไฟล์นี้มาเทียบก่อนอัปเดตทุกครั้ง
+      - name: Generate checksums
+        shell: powershell
+        run: |
+          $files = @("dist/Setup_FilterCore.exe", "dist/Uninstall_FilterCore.exe", "FilterCore-source.zip")
+          $lines = @()
+          foreach ($f in $files) {
+            if (Test-Path $f) {
+              $hash = (Get-FileHash -Algorithm SHA256 -Path $f).Hash.ToLower()
+              $name = Split-Path $f -Leaf
+              $lines += "$hash  $name"
+            }
+          }
+          $lines | Out-File -FilePath checksums.txt -Encoding utf8
+
+      # ---- สร้าง GitHub Release ตาม tag แล้วแนบไฟล์ทั้งหมด ----
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Setup_FilterCore.exe
+            dist/Uninstall_FilterCore.exe
+            FilterCore-source.zip
+            checksums.txt
