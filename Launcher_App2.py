@@ -1,4 +1,4 @@
-import sys   ีี
+import sys   
 
 if sys.stdout is not None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
