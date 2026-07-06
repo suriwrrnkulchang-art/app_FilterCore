@@ -41,9 +41,9 @@ jobs:
 
         Write-Host "--- กำลังสร้าง EXE ตัวที่ 1 ---"
         if ($icoFile) {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" --icon="$icoFile" "$pyFile1"
+            pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$pyFile1"
         } else {
-            pyinstaller --onefile --name="Setup_Myapp.FilterCore" "$pyFile1"
+            pyinstaller --onefile --name="uninstall_Program" "$pyFile1"
         }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "สร้าง EXE ตัวที่ 1 ล้มเหลว"
