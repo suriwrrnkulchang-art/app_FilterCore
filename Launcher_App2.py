@@ -28,7 +28,7 @@ if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
     sys.exit(0)
 
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
-EXPECTED_SHA256 = "aa7f1b9622dbe0c2b164259af5432fab34122c81f13d3cf56c00c5ff7fcc227c"
+EXPECTED_SHA256 = "5cb2a9d17c6f1e6894c9c549e59df4eb99c93b9bb4c8cfb5f38cea141a06d338"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_2.py")
