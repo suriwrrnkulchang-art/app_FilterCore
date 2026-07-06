@@ -1,54 +1,40 @@
 import urllib.request
-import os
+import urllib.error
 import tempfile
-import sys
+import os
+import runpy
+import socket
 
-# --- ⚠️ จุดสำคัญที่แก้ปัญหา No module named 'tkinter' และ 'ctypes' 100% ---
-# เราต้อง import โมดูล GUI และทุกตัวที่โปรแกรมจริง (Main.py) ของคุณใช้เอาไว้ตรงนี้!
-# เพื่อให้ PyInstaller รู้และดึง DLL ต่างๆ ฝังเข้าไปในไฟล์ .exe ด้วย
+URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/main/install.py"
 
-# 1. กลุ่ม GUI (Tkinter)
-import tkinter
-import tkinter.ttk
-import tkinter.messagebox
-import tkinter.filedialog
+TEMP_FILE = os.path.join(tempfile.gettempdir(), "install.py")
 
-# 2. กลุ่มจัดการระบบและ DLLs (แก้ปัญหา No module named 'ctypes')
-import ctypes
-import ctypes.util
-
-# 💡 หมายเหตุสำคัญ: 
-# จากภาพโค้ด Main.py ใน GitHub ของคุณก่อนหน้านี้ เห็นว่ามีการใช้ numpy, pywin32 และอื่นๆ
-# หากตัว Launcher นี้ไม่ได้มีระบบโหลดให้อัตโนมัติและต้องการให้ .exe นี้มีครบจบในตัว 
-# อย่าลืม import เพิ่มไว้ตรงนี้ด้วยนะครับ เช่น:
-# import numpy
-# import win32api
-# import win32con
-# ---------------------------------------------------------------------------------
-
-# เอาลิงก์ Raw URL ของไฟล์หลักที่ 1 บน GitHub มาวางตรงนี้
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install.py"
-
-temp_dir = tempfile.gettempdir()
-TEMP_FILE = os.path.join(temp_dir, "downloaded_script_1.py")
+socket.setdefaulttimeout(10)
 
 try:
-    print("กำลังตรวจสอบและดึงไฟล์อัปเดตล่าสุดจาก GitHub (App 1)...")
-    urllib.request.urlretrieve(GITHUB_RAW_URL, TEMP_FILE)
-    
-    print("กำลังเริ่มทำงาน...")
-    with open(TEMP_FILE, "r", encoding="utf-8") as f:
-        downloaded_code = f.read()
-    
-    # รันโค้ดที่ดาวน์โหลดมาทันทีโดยไม่ต้องเปิดไฟล์ซ้อน
-    exec(downloaded_code, globals())
-    
+    print("กำลังดาวน์โหลด App1...")
+
+    urllib.request.urlretrieve(URL, TEMP_FILE)
+
+    if not os.path.exists(TEMP_FILE):
+        raise Exception("ดาวน์โหลดไฟล์ไม่สำเร็จ")
+
+    if os.path.getsize(TEMP_FILE) == 0:
+        raise Exception("ไฟล์ว่าง")
+
+    print("กำลังเปิดโปรแกรม...")
+
+    runpy.run_path(TEMP_FILE, run_name="__main__")
+
+except urllib.error.URLError:
+    print("ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้")
+
 except Exception as e:
-    print(f"เกิดข้อผิดพลาดในการรันระบบ: {e}")
-    input("กด Enter เพื่อปิดโปรแกรม...")
+    print("เกิดข้อผิดพลาด:", e)
+
 finally:
     if os.path.exists(TEMP_FILE):
         try:
             os.remove(TEMP_FILE)
-        except:
+        except Exception:
             pass
