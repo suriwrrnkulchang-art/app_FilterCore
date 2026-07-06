@@ -4,6 +4,16 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
+    # 🟢 เปิดฟีเจอร์ให้คุณสามารถกดเลือกและพิมพ์ชื่อไฟล์ที่ต้องการดึงมาทำ EXE บนหน้าเว็บ GitHub ได้ทันที
+    inputs:
+      file1:
+        description: 'ชื่อไฟล์ Python ตัวที่ 1 (เช่น Setup_Program-My-THAI.py)'
+        required: true
+        default: 'Setup_Program-My-THAI.py'
+      file2:
+        description: 'ชื่อไฟล์ Python ตัวที่ 2 (เช่น uninstall_Program.py)'
+        required: true
+        default: 'uninstall_Program.py'
 
 jobs:
   build:
@@ -26,40 +36,50 @@ jobs:
     - name: Build EXE files
       shell: powershell
       run: |
-        # ------------------------------------------------------------------
-        # 🟢 กำหนดชื่อไฟล์ .py ให้ตรงกับที่อยู่บน GitHub ของคุณ
-        # ------------------------------------------------------------------
-        $pyFile1 = "Setup_Program-My-THAI.py"
-        $pyFile2 = "uninstall_Program.py"
+        # ดึงค่าชื่อไฟล์มาจากช่องกรอกบนหน้าเว็บ GitHub (หากรันแบบออโต้ตอน Push จะใช้ค่า Default ด้านบน)
+        $pyFile1 = "${{ github.event.inputs.file1 }}"
+        $pyFile2 = "${{ github.event.inputs.file2 }}"
         
-        # ค้นหาไฟล์ .ico อัตโนมัติในโฟลเดอร์ (ถ้าไม่มีจะข้ามให้เอง)
+        if (-not $pyFile1) { $pyFile1 = "Setup_Program-My-THAI.py" }
+        if (-not $pyFile2) { $pyFile2 = "uninstall_Program.py" }
+
+        # ค้นหาไฟล์ไอคอน .ico แรกในโปรเจกต์ (ถ้าไม่มีจะข้ามให้ไม่พัง)
         $icoFile = (Get-ChildItem -Filter *.ico | Select-Object -First 1).Name
-        
-        # --- ตรวจสอบและสร้าง EXE ตัวที่ 1 ---
-        if (Test-Path $pyFile1) {
-            Write-Host "--- [1/2] Building EXE for $pyFile1 ---" -ForegroundColor Cyan
-            if ($icoFile) {
-                pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$pyFile1"
-            } else {
-                pyinstaller --onefile --name="Setup_Program-My-THAI" "$pyFile1"
+
+        # ------------------------------------------------------------------
+        # 🤖 ฟังก์ชันอัจฉริยะ ค้นหาไฟล์ทั่วทั้งโปรเจกต์อัตโนมัติและสั่ง Build
+        # ------------------------------------------------------------------
+        function Build-ExeApp ($targetFile, $exeName, $icon) {
+            $actualPath = $targetFile
+            
+            # หากหาไม่เจอที่หน้าแรก (Root) จะสั่งให้ระบบค้นหาลึกเข้าไปในโฟลเดอร์ย่อยให้อัตโนมัติ
+            if (-not (Test-Path $actualPath)) {
+                $search = Get-ChildItem -Recurse -Filter $targetFile | Select-Object -First 1
+                if ($search) { 
+                    $actualPath = $search.FullName 
+                }
             }
-        } else {
-            Write-Host "ERROR: File '$pyFile1' not found! Please check your file name on GitHub." -ForegroundColor Red
-            exit 1
+
+            # สั่ง Build เมื่อเจอไฟล์
+            if (Test-Path $actualPath) {
+                Write-Host "--- [FOUND] Building EXE for $exeName using ($actualPath) ---" -ForegroundColor Cyan
+                if ($icon) {
+                    pyinstaller --onefile --name="$exeName" --icon="$icon" "$actualPath"
+                } else {
+                    pyinstaller --onefile --name="$exeName" "$actualPath"
+                }
+            } else {
+                # กรณีหาไม่เจอจริง ๆ ระบบจะลิสต์ไฟล์ .py ทั้งหมดใน GitHub มาให้คุณดูเพื่อตรวจคำผิด
+                Write-Host "❌ ERROR: ไม่พบไฟล์ชื่อ '$targetFile' ใน Repository นี้!" -ForegroundColor Red
+                Write-Host "นี่คือรายชื่อไฟล์ .py ทั้งหมดที่คุณอัปโหลดไว้บน GitHub ลองดูว่าพิมพ์ชื่อไหนผิดไปนะ:" -ForegroundColor Yellow
+                Get-ChildItem -Recurse -Filter *.py | ForEach-Object { Write-Host " -> $($_.Name) (อยู่ในโฟลเดอร์: $($_.DirectoryName))" }
+                exit 1
+            }
         }
 
-        # --- ตรวจสอบและสร้าง EXE ตัวที่ 2 ---
-        if (Test-Path $pyFile2) {
-            Write-Host "--- [2/2] Building EXE for $pyFile2 ---" -ForegroundColor Cyan
-            if ($icoFile) {
-                pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$pyFile2"
-            } else {
-                pyinstaller --onefile --name="uninstall_Program" "$pyFile2"
-            }
-        } else {
-            Write-Host "ERROR: File '$pyFile2' not found! Please check your file name on GitHub." -ForegroundColor Red
-            exit 1
-        }
+        # สั่งทำงานแอปที่ 1 และ แอปที่ 2
+        Build-ExeApp -targetFile $pyFile1 -exeName "Setup_Program-My-THAI" -icon $icoFile
+        Build-ExeApp -targetFile $pyFile2 -exeName "uninstall_Program" -icon $icoFile
 
     - name: Upload EXE Artifacts
       uses: actions/upload-artifact@v4
