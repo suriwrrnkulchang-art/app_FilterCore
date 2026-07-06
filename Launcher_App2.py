@@ -16,7 +16,7 @@ import ctypes.util
 # import win32con
 
 # 🟢 ใส่ลิงก์ Raw URL ของไฟล์หลักที่ 2 บน GitHub (เปลี่ยนเป็นไฟล์จริงของ App2)
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install2.py"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
 
 # 🔒 SHA-256 hash ของไฟล์เวอร์ชันที่เชื่อถือได้ (ของ App2)
 EXPECTED_SHA256 = "ใส่ hash ของไฟล์ App2 ที่นี่"
