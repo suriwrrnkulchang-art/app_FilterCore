@@ -19,7 +19,7 @@ import ctypes.util
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/uninstall.py"
 
 # 🔒 SHA-256 hash ของไฟล์เวอร์ชันที่เชื่อถือได้ (ของ App2)
-EXPECTED_SHA256 = "ใส่ hash ของไฟล์ App2 ที่นี่"
+EXPECTED_SHA256 = "aa7f1b9622dbe0c2b164259af5432fab34122c81f13d3cf56c00c5ff7fcc227c"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_2.py")
