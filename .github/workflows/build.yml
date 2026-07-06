@@ -6,19 +6,19 @@ on:
   workflow_dispatch:
     inputs:
       py_file_1:
-        description: 'พาธไฟล์ .py ตัวที่ 1 (เว้นว่าง = หาไฟล์แรกที่เจอ)'
+        description: 'Path to .py file #1 (leave empty = auto-detect first .py found)'
         required: false
         default: ''
       py_file_2:
-        description: 'พาธไฟล์ .py ตัวที่ 2 (เว้นว่าง = ข้าม ไม่ build ตัวนี้)'
+        description: 'Path to .py file #2 (leave empty = skip this build)'
         required: false
         default: ''
       exe_name_1:
-        description: 'ชื่อ EXE ตัวที่ 1'
+        description: 'EXE name #1'
         required: false
         default: 'Setup_Myapp.FilterCore'
       exe_name_2:
-        description: 'ชื่อ EXE ตัวที่ 2'
+        description: 'EXE name #2'
         required: false
         default: 'Setup_Myapp.Launcher'
 
@@ -50,7 +50,7 @@ jobs:
             $pyFile = (Get-ChildItem -Filter *.py | Select-Object -First 1).Name
         }
         if ([string]::IsNullOrWhiteSpace($pyFile) -or -not (Test-Path $pyFile)) {
-            Write-Error "ไม่พบไฟล์ .py สำหรับ EXE ตัวที่ 1 (ระบุ: '$($env:PY_FILE_1)')"
+            Write-Error "ERROR: .py file for EXE #1 not found (input was: '$($env:PY_FILE_1)')"
             exit 1
         }
 
@@ -68,7 +68,7 @@ jobs:
         }
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "PyInstaller build ล้มเหลวสำหรับไฟล์ที่ 1"
+            Write-Error "ERROR: PyInstaller build failed for file #1"
             exit 1
         }
 
@@ -81,12 +81,12 @@ jobs:
         $pyFile2 = $env:PY_FILE_2
 
         if ([string]::IsNullOrWhiteSpace($pyFile2)) {
-            Write-Host "ไม่ได้ระบุไฟล์ .py ตัวที่ 2 -> ข้ามการ build ตัวนี้"
+            Write-Host "No .py file #2 specified -> skipping this build"
             exit 0
         }
 
         if (-not (Test-Path $pyFile2)) {
-            Write-Error "ไม่พบไฟล์ .py สำหรับ EXE ตัวที่ 2 ที่พาธ: '$pyFile2'"
+            Write-Error "ERROR: .py file for EXE #2 not found at path: '$pyFile2'"
             exit 1
         }
 
@@ -104,7 +104,7 @@ jobs:
         }
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "PyInstaller build ล้มเหลวสำหรับไฟล์ที่ 2"
+            Write-Error "ERROR: PyInstaller build failed for file #2"
             exit 1
         }
 
