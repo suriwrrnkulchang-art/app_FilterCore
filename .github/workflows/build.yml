@@ -43,7 +43,7 @@ jobs:
         if ($icoFile) {
             pyinstaller --onefile --name="Setup_Program-My-THAI" --icon="$icoFile" "$pyFile1"
         } else {
-            pyinstaller --onefile --name="uninstall_Program" "$pyFile1"
+            pyinstaller --onefile --name="Setup_Program-My-THAI" "$pyFile1"
         }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "สร้าง EXE ตัวที่ 1 ล้มเหลว"
@@ -52,9 +52,9 @@ jobs:
 
         Write-Host "--- กำลังสร้าง EXE ตัวที่ 2 ---"
         if ($icoFile) {
-            pyinstaller --onefile --name="Setup_Myapp.SecondApp" --icon="$icoFile" "$pyFile2"
+            pyinstaller --onefile --name="uninstall_Program" --icon="$icoFile" "$pyFile2"
         } else {
-            pyinstaller --onefile --name="Setup_Myapp.SecondApp" "$pyFile2"
+            pyinstaller --onefile --name="uninstall_Program" "$pyFile2"
         }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "สร้าง EXE ตัวที่ 2 ล้มเหลว"
